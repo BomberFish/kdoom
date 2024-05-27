@@ -31,3 +31,9 @@ Just run the following after cloning the repo:
 * make package
 
 After that, copy the extension folder (./kual/doom) to the kual extensions folder on your Kindle.
+
+## Credits
+
+* Maxime Vincent - fbDOOM (upstream source)
+* NiLuJe - FBInk (e-ink drawing library)
+* Id Software (the game, duh)
