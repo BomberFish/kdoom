@@ -97,4 +97,4 @@
 #undef ORIGCODE
 
 /* Define to the directory where all game files are located */
-#define FILES_DIR "/mnt/us"
+#define FILES_DIR "/mnt/us" // Where the Kindle mounts USB

@@ -12,6 +12,11 @@
           "name": "Kill all running instances",
           "action": "killall kdoom",
           "exitmenu": false
+        },
+        {
+          "name": "Credits",
+          "action": "./kdoom -showcredits",
+          "exitmenu": false
         }
       ]
     }
