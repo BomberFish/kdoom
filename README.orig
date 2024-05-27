@@ -1,5 +1,6 @@
-fbDOOM
-===============
+================
+= fbDOOM =
+================
 
 Adaptation of the original DOOM
 to be easily portable to framebuffer devices with minimal depenencies.
