@@ -30,6 +30,13 @@ FBInkConfig fbink_cfg = {
     // when we give it DOOM's video buffer.
     // Honestly have no idea why it works, but it does :)
     ignore_alpha: true,
+    // Increase log verbosity for debugging
+    is_verbose: true,
+    is_quiet: false,
+    // Set e-ink waveform mode to A2.
+    // Supposed to be super fast but with some ghosting,
+    // but it should be fine for DOOM.
+    wfm_mode: WFM_A2
 };
 
 // Video buffer
