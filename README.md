@@ -1,4 +1,4 @@
-# DOOM for Amazon Kindle
+# kdoom - DOOM for the Amazon Kindle
 
 WIP port of DOOM to the Kindle (seriously, why hasn't anyone done this yet?)
 
@@ -6,12 +6,13 @@ WIP port of DOOM to the Kindle (seriously, why hasn't anyone done this yet?)
 
 * Scale properly to the screen
 * Input (either touch or kb idrc)
+* Test on something other than my (BomberFish) Paperwhite 4
 
 ## Setup
 
 You will need:
-* A jailbroken Kindle. You can check if your firmware is jailbreakable here: https://wiki.mobileread.com/wiki/Kindle_Firmware
-* KUAL installed. Downloads are on the MobileRead forums: https://www.mobileread.com/forums/showthread.php?t=225030
+* A jailbroken Kindle. You can check if your firmware is jailbreakable [here](https://wiki.mobileread.com/wiki/Kindle_Firmware).
+* KUAL installed. Downloads can be found [here](https://www.mobileread.com/forums/showthread.php?t=225030).
 
 Setup is easy as pie (?)
 1. Connect your Kindle via USB.
@@ -24,11 +25,11 @@ Setup is easy as pie (?)
 You will need:
 * Everything from the setup guide
 * A Linux PC. macOS might work on a good day but you're on your own.
-* A compatible toolchain. See https://www.mobileread.com/forums/showthread.php?t=348710 (sources and prebuilts)
+* A compatible toolchain. See [here](https://www.mobileread.com/forums/showthread.php?t=348710) (sources and prebuilts)
 
 Just run the following after cloning the repo:
-* git submodule update --init --recursive
-* make package
+* `git submodule update --init --recursive`
+* `make package`
 
 After that, copy the extension folder (./kual/doom) to the kual extensions folder on your Kindle.
 
