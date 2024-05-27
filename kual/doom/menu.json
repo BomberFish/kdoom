@@ -1,0 +1,19 @@
+{
+  "items": [
+    {
+      "name": "DOOM",
+      "items": [
+        {
+          "name": "Launch game",
+          "action": "./kdoom",
+          "exitmenu": false
+        },
+        {
+          "name": "Kill all running instances",
+          "action": "killall kdoom",
+          "exitmenu": false
+        }
+      ]
+    }
+  ]
+}
