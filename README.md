@@ -20,18 +20,18 @@ Setup is easy as pie (?)
 3. Copy the kual extension folder to the extensions/ folder.
 4. Enjoy! ;)
 
-## Building
+## Building from source
 
 You will need:
 * Everything from the setup guide
 * A Linux PC. macOS might work on a good day but you're on your own.
 * A compatible toolchain. See [here](https://www.mobileread.com/forums/showthread.php?t=348710) (sources and prebuilts)
 
-Just run the following after cloning the repo:
-* `git submodule update --init --recursive`
+Just run the following:
+* `git clone https://github.com/MercuryWorkshop/kdoom --recurse-submodules`
 * `make package`
 
-After that, copy the extension folder (./kual/doom) to the kual extensions folder on your Kindle.
+After that, just follow the installation instructions in "Setup".
 
 ## Credits
 

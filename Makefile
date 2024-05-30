@@ -54,6 +54,14 @@ dev: package
 	rm -rf /run/media/$(shell whoami)/Kindle/extensions/doom
 	cp -r ./kual/doom /run/media/$(shell whoami)/Kindle/extensions/
 
+dev-ssh: package
+	ssh root@192.168.15.244 "rm -rf /mnt/us/extensions/doom"
+	scp -r ./kual/doom root@192.168.15.244:/mnt/us/extensions/
+
+dev-ssh-priv: package
+	sshpass -p 'toor' ssh root@192.168.15.244 "rm -rf /mnt/us/extensions/doom"
+	sshpass -p 'toor' scp -r ./kual/doom root@192.168.15.244:/mnt/us/extensions/
+
 $(OUTPUT):	$(OBJS) fbink
 	@echo [Linking $@]
 	$(VB)$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) \

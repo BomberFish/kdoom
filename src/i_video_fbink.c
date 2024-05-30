@@ -24,39 +24,56 @@
 #include <sys/time.h>
 #include <sys/types.h>
 
+#define scale_factor 2 // TODO: Scale based on res?
+
 // Configuration for FBInk
 FBInkConfig fbink_cfg = {
     // We need this set so FBInk doesn't freak out
     // when we give it DOOM's video buffer.
     // Honestly have no idea why it works, but it does :)
-    ignore_alpha: true,
+    .ignore_alpha = true,
     // Increase log verbosity for debugging
-    is_verbose: true,
-    is_quiet: false,
+    .is_verbose = true,
+    .is_quiet = false,
     // Set e-ink waveform mode to A2.
     // Supposed to be super fast but with some ghosting,
     // but it should be fine for DOOM.
-    wfm_mode: WFM_A2
+    .wfm_mode = WFM_A2
 };
 
 // Video buffer
 byte *I_VideoBuffer = NULL;
+byte *I_VideoBuffer_FB = NULL;
 
 // File descriptor for the e-ink framebuffer
 int fbink_fd = -1;
 
 FBInkRect screen = {
-    left: 0,
-    top: 0,
-    width: SCREENWIDTH,
-    height: SCREENHEIGHT,
+    .left = 0,
+    .top = 0,
+    .width = SCREENWIDTH,
+    .height = SCREENHEIGHT,
 };
 
-FBInkRect screenLarger = {
-    left: 0,
-    top: 0,
-    width: SCREENWIDTH + 50,
-    height: SCREENHEIGHT + 50,
+FBInkRect screen_scaled = {
+    .left = 0,
+    .top = 0,
+    .width = SCREENWIDTH * scale_factor,
+    .height = SCREENHEIGHT * scale_factor,
+};
+
+FBInkRect screen_padded = {
+    .left = 0,
+    .top = 0,
+    .width = SCREENWIDTH + 50,
+    .height = SCREENHEIGHT + 50,
+};
+
+FBInkRect screen_padded_scaled = {
+    .left = 0,
+    .top = 0,
+    .width = (SCREENWIDTH + 50) * scale_factor,
+    .height = (SCREENHEIGHT + 50) * scale_factor,
 };
 
 // Variables required by the game
@@ -102,6 +119,7 @@ int usegamma = 0;
 
 // Initialize the video system
 void I_InitGraphics(void) {
+    usleep(500000); // sleep 0.5s
     printf("I_InitGraphics\n");
     // Open the framebuffer
     fbink_fd = open("/dev/fb0", O_RDWR);
@@ -119,12 +137,15 @@ void I_InitGraphics(void) {
     }
     printf("fbink_init: %d\n", ret);
 
-    // Clear the screen
-    ret = fbink_cls(fbink_fd, &fbink_cfg, &screenLarger, false);
-    printf("fbink_cls: %d\n", ret);
+    for (int i = 0; i < 3; i++) { // Prevent menu ghosting
+        // Clear the screen
+        ret = fbink_cls(fbink_fd, &fbink_cfg, &screen_padded, false);
+        printf("fbink_cls: %d\n", ret);
+    }
 
     // Allocate video buffer
     I_VideoBuffer = (byte*)Z_Malloc (SCREENWIDTH * SCREENHEIGHT, PU_STATIC, NULL);
+    I_VideoBuffer_FB = (byte*)Z_Malloc((SCREENWIDTH * scale_factor) * (SCREENHEIGHT * scale_factor), PU_STATIC, NULL);
 
     // Finish up
     screenvisible = true;
@@ -152,17 +173,28 @@ void I_FinishUpdate(void) {
     // ret = fbink_cls(fbink_fd, &fbink_cfg, &screenLarger, false);
     // printf("fbink_cls: %d\n", ret);
 
-    // Print the video buffer to the screen
+    // Scale video buffer by scale_factor
+    for (int i = 0; i < SCREENHEIGHT; i++) { // Iterate over pixels
+        for (int j = 0; j < SCREENWIDTH; j++) {
+            for (int k = 0; k < scale_factor; k++) { // duplicate lines
+                for (int l = 0; l < scale_factor; l++) { // duplicate pixels
+                    I_VideoBuffer_FB[(i * scale_factor + k) * SCREENWIDTH * scale_factor + (j * scale_factor + l)] = I_VideoBuffer[i * SCREENWIDTH + j];
+                }
+            }
+        }
+    }
+
     ret = fbink_print_raw_data(
         fbink_fd,
-        (unsigned char*)I_VideoBuffer,
-        SCREENWIDTH,
-        SCREENHEIGHT,
-        SCREENWIDTH*SCREENHEIGHT,
+        (unsigned char*)I_VideoBuffer_FB,
+        SCREENWIDTH*scale_factor,
+        SCREENHEIGHT*scale_factor,
+        (SCREENWIDTH*scale_factor)*(SCREENHEIGHT*scale_factor),
         0,
         0,
         &fbink_cfg
     );
+
     printf("fbink_print_raw_data: %d\n", ret);
 }
 
@@ -173,18 +205,18 @@ void I_ReadScreen(byte *scr) {
 }
 
 // Functions that are useless to us, but the game expects them to exist
-void I_StartFrame(void) {printf("I_StartFrame\n");}
-__attribute__((weak)) void I_GetEvent(void) {printf("I_GetEvent\n");}
-__attribute__((weak)) void I_StartTic(void) {printf("I_StartTic\n");}
-void I_UpdateNoBlit(void) {printf("I_UpdateNoBlit\n");}
-void I_SetPalette(byte *palette) {printf("I_SetPalette\n");}
-int I_GetPaletteIndex(int r, int g, int b) { return 0; }
-void I_BeginRead(void) {printf("I_BeginRead\n");}
-void I_EndRead(void) {printf("I_EndRead\n");}
-void I_SetWindowTitle(char *title) {printf("I_SetWindowTitle\n");}
-void I_GraphicsCheckCommandLine(void) {printf("I_GraphicsCheckCommandLine\n");}
-void I_SetGrabMouseCallback(grabmouse_callback_t func) {printf("I_SetGrabMouseCallback\n");}
-void I_EnableLoadingDisk(void) {printf("I_EnableLoadingDisk\n");}
-void I_BindVideoVariables(void) {printf("I_BindVideoVariables\n");}
-void I_DisplayFPSDots(boolean dots_on) {printf("I_DisplayFPSDots\n");}
-void I_CheckIsScreensaver(void) {printf("I_CheckIsScreensaver\n");}
+void I_StartFrame(void) {printf("(N/I) I_StartFrame\n");}
+__attribute__((weak)) void I_GetEvent(void) {printf("(N/I) I_GetEvent\n");}
+__attribute__((weak)) void I_StartTic(void) {printf("(N/I) I_StartTic\n");}
+void I_UpdateNoBlit(void) {printf("(N/I) I_UpdateNoBlit\n");}
+void I_SetPalette(byte *palette) {printf("(N/I) I_SetPalette\n");}
+int I_GetPaletteIndex(int r, int g, int b) { printf("(N/I) I_GetPaletteIndex\n"); return 0; }
+void I_BeginRead(void) {printf("(N/I) I_BeginRead\n");}
+void I_EndRead(void) {printf("(N/I) I_EndRead\n");}
+void I_SetWindowTitle(char *title) {printf("(N/I) I_SetWindowTitle\n");}
+void I_GraphicsCheckCommandLine(void) {printf("(N/I) I_GraphicsCheckCommandLine\n");}
+void I_SetGrabMouseCallback(grabmouse_callback_t func) {printf("(N/I) I_SetGrabMouseCallback\n");}
+void I_EnableLoadingDisk(void) {printf("(N/I) I_EnableLoadingDisk\n");}
+void I_BindVideoVariables(void) {printf("(N/I) I_BindVideoVariables\n");}
+void I_DisplayFPSDots(boolean dots_on) {printf("(N/I) I_DisplayFPSDots\n");}
+void I_CheckIsScreensaver(void) {printf("(N/I) I_CheckIsScreensaver\n");}

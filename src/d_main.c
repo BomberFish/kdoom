@@ -1171,19 +1171,26 @@ void D_DoomMain (void)
     if (M_CheckParm("-showcredits")) {
         sleep(2); // give kual time to animate button press
         FBInkConfig fbink_cfg = {0};
+        FBInkOTConfig fbink_ot_cfg = {0};
         char *credits =
         "DOOM for the Amazon Kindle\n"
         "Now with 87% more jank!\n"
-        "\n(c) 2024 Mercury Workshop, BomberFish\n"
+        "\n(c) 2024 BomberFish, Mercury Workshop\n"
         "\n\n"
         "Extra Credits:\n"
         "- Maxime Vincent: fbDOOM (upstream source)\n"
         "- NiLuJe: FBInk (e-ink drawing library)\n"
-        "\n\nAlso thanks for not suing us Id!";
+        "\n\nAlso thanks for not suing us, Id Software!";
+
+        // quick 'n dirty display init
         int fbink_fd = open("/dev/fb0", O_RDWR);
         int ret = fbink_init(fbink_fd, &fbink_cfg);
-        fbink_print(fbink_fd, credits, &fbink_cfg);
-        exit(0);
+        printf("fbink_init: %d\n", ret);
+        fbink_add_ot_font_v2("/usr/java/lib/fonts/Futura-Medium.ttf", FNT_REGULAR, &fbink_ot_cfg); // Should be on most if not all Kindles
+        fbink_print_ot(fbink_fd, credits, &fbink_ot_cfg, &fbink_cfg, NULL);
+        fbink_free_ot_fonts_v2(&fbink_ot_cfg);
+        fbink_close(fbink_fd);
+        exit(69); // your honor, the punchline is sex.
     }
 
 #if ORIGCODE
