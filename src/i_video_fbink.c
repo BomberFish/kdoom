@@ -24,7 +24,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 
-#define scale_factor 2 // TODO: Scale based on res?
+int scale_factor = 2; // TODO: Scale based on res?
 
 // Configuration for FBInk
 FBInkConfig fbink_cfg = {
@@ -55,12 +55,12 @@ FBInkRect screen = {
     .height = SCREENHEIGHT,
 };
 
-FBInkRect screen_scaled = {
-    .left = 0,
-    .top = 0,
-    .width = SCREENWIDTH * scale_factor,
-    .height = SCREENHEIGHT * scale_factor,
-};
+// FBInkRect screen_scaled = {
+//     .left = 0,
+//     .top = 0,
+//     .width = SCREENWIDTH * scale_factor,
+//     .height = SCREENHEIGHT * scale_factor,
+// };
 
 FBInkRect screen_padded = {
     .left = 0,
@@ -69,12 +69,12 @@ FBInkRect screen_padded = {
     .height = SCREENHEIGHT + 50,
 };
 
-FBInkRect screen_padded_scaled = {
-    .left = 0,
-    .top = 0,
-    .width = (SCREENWIDTH + 50) * scale_factor,
-    .height = (SCREENHEIGHT + 50) * scale_factor,
-};
+// FBInkRect screen_padded_scaled = {
+//     .left = 0,
+//     .top = 0,
+//     .width = (SCREENWIDTH + 50) * scale_factor,
+//     .height = (SCREENHEIGHT + 50) * scale_factor,
+// };
 
 // Variables required by the game
 
@@ -117,6 +117,8 @@ int mouse_threshold = 10;
 
 int usegamma = 0;
 
+FBInkState fbink_state;
+
 // Initialize the video system
 void I_InitGraphics(void) {
     usleep(500000); // sleep 0.5s
@@ -136,6 +138,13 @@ void I_InitGraphics(void) {
         exit(1);
     }
     printf("fbink_init: %d\n", ret);
+
+    fbink_get_state(&fbink_cfg, &fbink_state);
+    uint32_t w = fbink_state.screen_width;
+    uint32_t h = fbink_state.screen_height;
+    printf("Resolution: %d*%d", w, h);
+
+    scale_factor = w / SCREENWIDTH;
 
     for (int i = 0; i < 3; i++) { // Prevent menu ghosting
         // Clear the screen
