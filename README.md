@@ -4,7 +4,7 @@ WIP port of DOOM to the Kindle (seriously, why hasn't anyone done this yet?)
 
 ## Todo
 
-* Scale properly to the screen
+* ~~Scale properly to the screen~~
 * Input (either touch or kb idrc)
 * Test on something other than my (BomberFish's) Paperwhite 4
 
