@@ -213,7 +213,7 @@ void I_FinishUpdate(void) {
 void I_StartFrame(void) {
     printf("I_StartFrame\n");
     frame++;
-    if (frame > 35*5) { // 10 seconds
+    if (frame > TICRATE*4) { // hopefully gcc optimizes this to a constant...
         frame = 0;
     }
 }
