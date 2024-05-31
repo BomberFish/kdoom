@@ -26,6 +26,8 @@
 
 int scale_factor = 2; // TODO: Scale based on res?
 
+int frame = 0;
+
 // Configuration for FBInk
 FBInkConfig fbink_cfg = {
     // We need this set so FBInk doesn't freak out
@@ -55,12 +57,7 @@ FBInkRect screen = {
     .height = SCREENHEIGHT,
 };
 
-// FBInkRect screen_scaled = {
-//     .left = 0,
-//     .top = 0,
-//     .width = SCREENWIDTH * scale_factor,
-//     .height = SCREENHEIGHT * scale_factor,
-// };
+FBInkRect screen_scaled;
 
 FBInkRect screen_padded = {
     .left = 0,
@@ -68,13 +65,6 @@ FBInkRect screen_padded = {
     .width = SCREENWIDTH + 50,
     .height = SCREENHEIGHT + 50,
 };
-
-// FBInkRect screen_padded_scaled = {
-//     .left = 0,
-//     .top = 0,
-//     .width = (SCREENWIDTH + 50) * scale_factor,
-//     .height = (SCREENHEIGHT + 50) * scale_factor,
-// };
 
 // Variables required by the game
 
@@ -146,6 +136,13 @@ void I_InitGraphics(void) {
 
     scale_factor = w / SCREENWIDTH;
 
+    screen_scaled = (FBInkRect) {
+        .left = 0,
+        .top = 0,
+        .width = SCREENWIDTH * scale_factor,
+        .height = SCREENHEIGHT * scale_factor,
+    };
+
     for (int i = 0; i < 3; i++) { // Prevent menu ghosting
         // Clear the screen
         ret = fbink_cls(fbink_fd, &fbink_cfg, &screen_padded, false);
@@ -175,6 +172,12 @@ void I_ShutdownGraphics(void) {
 void I_FinishUpdate(void) {
     printf("I_FinishUpdate\n");
     int ret;
+
+    if (frame == 0) {
+        // Clear the screen
+        ret = fbink_cls(fbink_fd, &fbink_cfg, &screen_scaled, false);
+        printf("fbink_cls: %d\n", ret);
+    }
 
     // clearing the screen on each frame would technically look better,
     // but since the refresh rate on the e-ink is so bad,
@@ -207,6 +210,14 @@ void I_FinishUpdate(void) {
     printf("fbink_print_raw_data: %d\n", ret);
 }
 
+void I_StartFrame(void) {
+    printf("I_StartFrame\n");
+    frame++;
+    if (frame > 35*5) { // 10 seconds
+        frame = 0;
+    }
+}
+
 // Super simple function to read the video buffer
 void I_ReadScreen(byte *scr) {
     printf("I_ReadScreen\n");
@@ -214,7 +225,6 @@ void I_ReadScreen(byte *scr) {
 }
 
 // Functions that are useless to us, but the game expects them to exist
-void I_StartFrame(void) {printf("(N/I) I_StartFrame\n");}
 __attribute__((weak)) void I_GetEvent(void) {printf("(N/I) I_GetEvent\n");}
 __attribute__((weak)) void I_StartTic(void) {printf("(N/I) I_StartTic\n");}
 void I_UpdateNoBlit(void) {printf("(N/I) I_UpdateNoBlit\n");}
