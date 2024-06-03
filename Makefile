@@ -19,7 +19,7 @@ OBJS+=$(OBJDIR)/i_video_fbink.o
 OBJS+=$(OBJDIR)/i_input_tty.o
 
 CC=arm-kindlepw2-linux-gnueabi-gcc
-CFLAGS+=-ggdb3 -Os
+CFLAGS+=-ggdb3 -Os -I./FBInk
 LDFLAGS+=-Wl,--gc-sections -L./FBInk/Release/static
 CFLAGS+=-ggdb3 -Wall -DNORMALUNIX -DLINUX -DSNDSERV # -DUSEASM
 LIBS+=-lm -lc -lfbink
@@ -55,12 +55,14 @@ dev: package
 	cp -r ./kual/doom /run/media/$(shell whoami)/Kindle/extensions/
 
 dev-ssh: package
-	ssh root@192.168.15.244 "rm -rf /mnt/us/extensions/doom"
-	scp -r ./kual/doom root@192.168.15.244:/mnt/us/extensions/
+	if [ ! -f .passwd ]; then echo "Please create a file named .passwd with the root password of your kindle"; exit 1; fi
+	sshpass -p $(shell cat .passwd) ssh root@192.168.15.244 "uname -a"
+	sshpass -p $(shell cat .passwd) ssh root@192.168.15.244 "rm -rf /mnt/us/extensions/doom"
+	sshpass -p $(shell cat .passwd) scp -r ./kual/doom root@192.168.15.244:/mnt/us/extensions/
 
-dev-ssh-priv: package
-	sshpass -p 'toor' ssh root@192.168.15.244 "rm -rf /mnt/us/extensions/doom"
-	sshpass -p 'toor' scp -r ./kual/doom root@192.168.15.244:/mnt/us/extensions/
+run-ssh: dev-ssh
+	if [ ! -f .passwd ]; then echo "Please create a file named .passwd with the root password of your kindle"; exit 1; fi
+	sshpass -p $(shell cat .passwd) ssh root@192.168.15.244 "/mnt/us/extensions/doom/kdoom"
 
 $(OUTPUT):	$(OBJS) fbink
 	@echo [Linking $@]

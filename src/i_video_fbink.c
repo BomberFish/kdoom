@@ -11,11 +11,11 @@
 #include "doomkeys.h"
 #include "tables.h"
 
+#include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <errno.h>
 
 #include "../FBInk/fbink.h"
 #include <stdarg.h>
@@ -34,13 +34,17 @@ FBInkConfig fbink_cfg = {
     // when we give it DOOM's video buffer.
     // Honestly have no idea why it works, but it does :)
     .ignore_alpha = true,
-    // Increase log verbosity for debugging
+// Log levels
+#ifdef DEBUG
     .is_verbose = true,
     .is_quiet = false,
-    // Set e-ink waveform mode to A2.
-    // Supposed to be super fast but with some ghosting,
-    // but it should be fine for DOOM.
-    .wfm_mode = WFM_A2
+#else
+    .is_verbose = false,
+    .is_quiet = true,
+#endif
+    // E-ink waveform
+    .wfm_mode = WFM_A2,
+    .dithering_mode = HWD_ORDERED,
 };
 
 // Video buffer
@@ -71,15 +75,15 @@ FBInkRect screen_padded = {
 int usemouse = 0;
 
 struct color {
-    uint32_t b:8;
-    uint32_t g:8;
-    uint32_t r:8;
-    uint32_t a:8;
+  uint32_t b : 8;
+  uint32_t g : 8;
+  uint32_t r : 8;
+  uint32_t a : 8;
 };
 
 // static struct color colors[256];
 
-int	X_width;
+int X_width;
 int X_height;
 
 // If true, game is running as a screensaver
@@ -111,131 +115,196 @@ FBInkState fbink_state;
 
 // Initialize the video system
 void I_InitGraphics(void) {
-    usleep(500000); // sleep 0.5s
-    printf("I_InitGraphics\n");
-    // Open the framebuffer
-    fbink_fd = open("/dev/fb0", O_RDWR);
-    if (fbink_fd < 0) {
-        fprintf(stderr, "couldnt open the framebuffer!!!\n");
-        exit(1);
-    }
-    printf("fbink_fd: %d\n", fbink_fd);
+  usleep(500000); // sleep 0.5s
+  printf("I_InitGraphics\n");
+  // Open the framebuffer
+  fbink_fd = open("/dev/fb0", O_RDWR);
+  if (fbink_fd < 0) {
+    fprintf(stderr, "couldnt open the framebuffer!!!\n");
+    exit(1);
+  }
+  printf("fbink_fd: %d\n", fbink_fd);
 
-    // Initialize FBInk
-    int ret = fbink_init(fbink_fd, &fbink_cfg);
-    if (ret < 0 || ret == ENOSYS) {
-        fprintf(stderr, "fbink_init failed: %d\n", ret);
-        exit(1);
-    }
-    printf("fbink_init: %d\n", ret);
+  // Initialize FBInk
+  int ret = fbink_init(fbink_fd, &fbink_cfg);
+  if (ret < 0 || ret == ENOSYS) {
+    fprintf(stderr, "fbink_init failed: %d\n", ret);
+    exit(1);
+  }
+  printf("fbink_init: %d\n", ret);
 
-    fbink_get_state(&fbink_cfg, &fbink_state);
-    uint32_t w = fbink_state.screen_width;
-    uint32_t h = fbink_state.screen_height;
-    printf("Resolution: %d*%d", w, h);
+  fbink_get_state(&fbink_cfg, &fbink_state);
+  uint32_t w = fbink_state.screen_width;
+  uint32_t h = fbink_state.screen_height;
+  printf("Resolution: %d*%d", w, h);
 
-    scale_factor = w / SCREENWIDTH;
+  scale_factor = w / SCREENWIDTH;
 
-    screen_scaled = (FBInkRect) {
-        .left = 0,
-        .top = 0,
-        .width = SCREENWIDTH * scale_factor,
-        .height = SCREENHEIGHT * scale_factor,
-    };
+  screen_scaled = (FBInkRect){
+      .left = 0,
+      .top = 0,
+      .width = w,
+      .height = h,
+  };
 
-    for (int i = 0; i < 3; i++) { // Prevent menu ghosting
-        // Clear the screen
-        ret = fbink_cls(fbink_fd, &fbink_cfg, &screen_padded, false);
-        printf("fbink_cls: %d\n", ret);
-    }
+  for (int i = 0; i < 3; i++) { // Prevent menu ghosting
+    // Clear the screen
+    ret = fbink_cls(fbink_fd, &fbink_cfg, &screen_scaled, false);
+    printf("fbink_cls: %d\n", ret);
+  }
 
-    // Allocate video buffer
-    I_VideoBuffer = (byte*)Z_Malloc (SCREENWIDTH * SCREENHEIGHT, PU_STATIC, NULL);
-    I_VideoBuffer_FB = (byte*)Z_Malloc((SCREENWIDTH * scale_factor) * (SCREENHEIGHT * scale_factor), PU_STATIC, NULL);
+  // Allocate video buffer
+  I_VideoBuffer = (byte *)Z_Malloc(SCREENWIDTH * SCREENHEIGHT, PU_STATIC, NULL);
+  I_VideoBuffer_FB = (byte *)Z_Malloc((SCREENWIDTH * scale_factor) *
+                                          (SCREENHEIGHT * scale_factor),
+                                      PU_STATIC, NULL);
 
-    // Finish up
-    screenvisible = true;
+  // Finish up
+  screenvisible = true;
 
-    extern int I_InitInput(void);
-    I_InitInput();
+  extern int I_InitInput(void);
+  I_InitInput();
 }
 
 // Shutdown the video system
 void I_ShutdownGraphics(void) {
-    printf("I_ShutdownGraphics\n");
-    // Not sure what this does over just doing a close() but FBInk recommends doing it
-    fbink_close(fbink_fd);
+  printf("I_ShutdownGraphics\n");
+  // Not sure what this does over just doing a close() but FBInk recommends
+  // doing it
+  fbink_close(fbink_fd);
 }
 
 // Update the screen.
 // this is where the magic happens (bazinga)
 void I_FinishUpdate(void) {
-    printf("I_FinishUpdate\n");
-    int ret;
+#ifdef DEBUG
+  printf("I_FinishUpdate\n");
+#endif
+  int ret;
 
-    if (frame == 0) {
-        // Clear the screen
-        ret = fbink_cls(fbink_fd, &fbink_cfg, &screen_scaled, false);
-        printf("fbink_cls: %d\n", ret);
-    }
+  if (frame == 0) {
+    // Clear the screen
+    ret = fbink_cls(fbink_fd, &fbink_cfg, &screen_scaled, false);
+    printf("fbink_cls: %d\n", ret);
+  }
 
-    // clearing the screen on each frame would technically look better,
-    // but since the refresh rate on the e-ink is so bad,
-    // we can't afford to do that without it looking like hot trash
-    // ret = fbink_cls(fbink_fd, &fbink_cfg, &screenLarger, false);
-    // printf("fbink_cls: %d\n", ret);
+  // clearing the screen on each frame would technically look better,
+  // but since the refresh rate on the e-ink is so bad,
+  // we can't afford to do that without it looking like hot trash
+  // ret = fbink_cls(fbink_fd, &fbink_cfg, &screenLarger, false);
+  // printf("fbink_cls: %d\n", ret);
 
-    // Scale video buffer by scale_factor
-    for (int i = 0; i < SCREENHEIGHT; i++) { // Iterate over pixels
-        for (int j = 0; j < SCREENWIDTH; j++) {
-            for (int k = 0; k < scale_factor; k++) { // duplicate lines
-                for (int l = 0; l < scale_factor; l++) { // duplicate pixels
-                    I_VideoBuffer_FB[(i * scale_factor + k) * SCREENWIDTH * scale_factor + (j * scale_factor + l)] = I_VideoBuffer[i * SCREENWIDTH + j];
-                }
-            }
+  // Scale video buffer by scale_factor
+  for (int i = 0; i < SCREENHEIGHT; i++) { // Iterate over pixels
+    for (int j = 0; j < SCREENWIDTH; j++) {
+      for (int k = 0; k < scale_factor; k++) {   // duplicate lines
+        for (int l = 0; l < scale_factor; l++) { // duplicate pixels
+          I_VideoBuffer_FB[(i * scale_factor + k) * SCREENWIDTH * scale_factor +
+                           (j * scale_factor + l)] =
+              I_VideoBuffer[i * SCREENWIDTH + j];
         }
+      }
     }
+  }
 
-    ret = fbink_print_raw_data(
-        fbink_fd,
-        (unsigned char*)I_VideoBuffer_FB,
-        SCREENWIDTH*scale_factor,
-        SCREENHEIGHT*scale_factor,
-        (SCREENWIDTH*scale_factor)*(SCREENHEIGHT*scale_factor),
-        0,
-        0,
-        &fbink_cfg
-    );
+  ret = fbink_print_raw_data(
+      fbink_fd, (unsigned char *)I_VideoBuffer_FB, SCREENWIDTH * scale_factor,
+      SCREENHEIGHT * scale_factor,
+      (SCREENWIDTH * scale_factor) * (SCREENHEIGHT * scale_factor), 0, 0,
+      &fbink_cfg);
 
-    printf("fbink_print_raw_data: %d\n", ret);
+#ifdef DEBUG
+  printf("fbink_print_raw_data: %d\n", ret);
+#endif
+
+  // usleep(290000);
 }
 
 void I_StartFrame(void) {
-    printf("I_StartFrame\n");
-    frame++;
-    if (frame > TICRATE*4) { // hopefully gcc optimizes this to a constant...
-        frame = 0;
-    }
+#ifdef DEBUG
+  printf("I_StartFrame\n");
+#endif
+  frame++;
+  if (frame > TICRATE * 5) { // hopefully gcc optimizes this to a constant...
+    frame = 0;
+  }
 }
 
 // Super simple function to read the video buffer
 void I_ReadScreen(byte *scr) {
-    printf("I_ReadScreen\n");
-    memcpy (scr, I_VideoBuffer, SCREENWIDTH * SCREENHEIGHT);
+  printf("I_ReadScreen\n");
+  memcpy(scr, I_VideoBuffer, SCREENWIDTH * SCREENHEIGHT);
 }
 
 // Functions that are useless to us, but the game expects them to exist
-__attribute__((weak)) void I_GetEvent(void) {printf("(N/I) I_GetEvent\n");}
-__attribute__((weak)) void I_StartTic(void) {printf("(N/I) I_StartTic\n");}
-void I_UpdateNoBlit(void) {printf("(N/I) I_UpdateNoBlit\n");}
-void I_SetPalette(byte *palette) {printf("(N/I) I_SetPalette\n");}
-int I_GetPaletteIndex(int r, int g, int b) { printf("(N/I) I_GetPaletteIndex\n"); return 0; }
-void I_BeginRead(void) {printf("(N/I) I_BeginRead\n");}
-void I_EndRead(void) {printf("(N/I) I_EndRead\n");}
-void I_SetWindowTitle(char *title) {printf("(N/I) I_SetWindowTitle\n");}
-void I_GraphicsCheckCommandLine(void) {printf("(N/I) I_GraphicsCheckCommandLine\n");}
-void I_SetGrabMouseCallback(grabmouse_callback_t func) {printf("(N/I) I_SetGrabMouseCallback\n");}
-void I_EnableLoadingDisk(void) {printf("(N/I) I_EnableLoadingDisk\n");}
-void I_BindVideoVariables(void) {printf("(N/I) I_BindVideoVariables\n");}
-void I_DisplayFPSDots(boolean dots_on) {printf("(N/I) I_DisplayFPSDots\n");}
-void I_CheckIsScreensaver(void) {printf("(N/I) I_CheckIsScreensaver\n");}
+__attribute__((weak)) void I_GetEvent(void) {
+#ifdef DEBUG
+  printf("(N/I) I_GetEvent\n");
+#endif
+}
+__attribute__((weak)) void I_StartTic(void) {
+#ifdef DEBUG
+  printf("(N/I) I_StartTic\n");
+#endif
+}
+void I_UpdateNoBlit(void) {
+#ifdef DEBUG
+  printf("(N/I) I_UpdateNoBlit\n");
+#endif
+}
+void I_SetPalette(byte *palette) {
+#ifdef DEBUG
+  printf("(N/I) I_SetPalette\n");
+#endif
+}
+int I_GetPaletteIndex(int r, int g, int b) {
+#ifdef DEBUG
+  printf("(N/I) I_GetPaletteIndex\n");
+#endif
+  return 0;
+}
+void I_BeginRead(void) {
+#ifdef DEBUG
+  printf("(N/I) I_BeginRead\n");
+#endif
+}
+void I_EndRead(void) {
+#ifdef DEBUG
+  printf("(N/I) I_EndRead\n");
+#endif
+}
+void I_SetWindowTitle(char *title) {
+#ifdef DEBUG
+  printf("(N/I) I_SetWindowTitle\n");
+#endif
+}
+void I_GraphicsCheckCommandLine(void) {
+#ifdef DEBUG
+  printf("(N/I) I_GraphicsCheckCommandLine\n");
+#endif
+}
+void I_SetGrabMouseCallback(grabmouse_callback_t func) {
+#ifdef DEBUG
+  printf("(N/I) I_SetGrabMouseCallback\n");
+#endif
+}
+void I_EnableLoadingDisk(void) {
+#ifdef DEBUG
+  printf("(N/I) I_EnableLoadingDisk\n");
+#endif
+}
+void I_BindVideoVariables(void) {
+#ifdef DEBUG
+  printf("(N/I) I_BindVideoVariables\n");
+#endif
+}
+void I_DisplayFPSDots(boolean dots_on) {
+#ifdef DEBUG
+  printf("(N/I) I_DisplayFPSDots\n");
+#endif
+}
+void I_CheckIsScreensaver(void) {
+#ifdef DEBUG
+  printf("(N/I) I_CheckIsScreensaver\n");
+#endif
+}
