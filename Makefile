@@ -21,9 +21,9 @@ OBJS+=$(OBJDIR)/kill.o
 
 CC=arm-kindlepw2-linux-gnueabi-gcc
 CFLAGS+=-ggdb3 -O2 -I./FBInk -fPIC
-LDFLAGS+=-Wl,--gc-sections -L./FBInk/Release/static
+LDFLAGS+=-Wl,--gc-sections -L./FBInk/Release/static -L./FBInk/libevdev-staged/lib
 CFLAGS+=-ggdb3 -Wall -DNORMALUNIX -DLINUX
-LIBS+=-lm -lc -lfbink
+LIBS+=-lm -lc -lfbink -l:libevdev.a
 
 # ifneq ($(NOSDL),1)
 # 	LIBS+= -lSDL
@@ -38,15 +38,21 @@ OBJS += $(addprefix $(OBJDIR)/, $(SRC_DOOM))
 
 all: $(OUTPUT)
 
-clean:
+clean: fbink_clean
 	rm -rf $(OBJDIR)
 	rm -f $(OUTPUT)
 	rm -f $(OUTPUT).gdb
 	rm -f $(OUTPUT).map
-	make -C FBInk clean
 
-fbink:
+fbink_clean:
+	$(MAKE) -C FBInk clean
+	$(MAKE) -C FBInk libevdevclean
+
+fbink: fbink_libevdev
 	$(MAKE) -C FBInk static KINDLE=1 CROSS_COMPILE=arm-kindlepw2-linux-gnueabi-
+
+fbink_libevdev:
+	$(MAKE) -C FBInk libevdev.built KINDLE=1 CROSS_COMPILE=arm-kindlepw2-linux-gnueabi- CROSS_TC=arm-kindlepw2-linux-gnueabi CC=arm-kindlepw2-linux-gnueabi-gcc AR=arm-kindlepw2-linux-gnueabi-ar LD=arm-kindlepw2-linux-gnueabi-ld
 
 package: $(OUTPUT)
 	cp $(OUTPUT) ./kual/doom

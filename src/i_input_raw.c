@@ -1,7 +1,7 @@
 // bomberfish 2024
 // File: i_input_raw.c
-// Raw /dev/input touchscreen input for kdoom
-// TODO: Add controls, make more device-agnostic, don't kill Xorg on every tick!
+// Raw /dev/input touchscreen input for kdoom. Most code taken from FBInk's finger_trace sample.
+// TODO: Add controls, make the code look nicer.
 
 #include <stdlib.h>
 #include <ctype.h>
@@ -17,6 +17,9 @@
 #include <linux/input.h>
 #include <dirent.h>
 #include <poll.h>
+#include <errno.h>
+#include <../FBInk/fbink.h>
+#include <../FBInk/libevdev/libevdev/libevdev.h>
 
 #include "config.h"
 #include "deh_str.h"
@@ -40,93 +43,102 @@ void kill_processes_by_name(const char *process_name);
 
 int vanilla_keyboard_mapping = 1;
 
-struct pollfd fds;
+struct pollfd pfd;
 
 // Is the shift key currently down?
 
 static int shiftdown = 0;
 
-int screen_fd = -1;
+FBInkInputDevice *input_devices = NULL;
+int dev_cnt = 0;
 
-void find_touchscreen(void) {
-    struct dirent *entry;
-    DIR *dp = opendir("/dev/input");
-    if (dp == NULL) {
-        perror("opendir");
-    }
-    // Iterate thru /dev/input/*
-    while ((entry = readdir(dp))) {
-        printf("entry->d_name: %s\n", entry->d_name);
-        if (strstr(entry->d_name, "event") != NULL) {
-            char filename[256];
-            snprintf(filename, sizeof(filename), "/dev/input/%s", entry->d_name);
-            int fd = open(filename, O_RDONLY|O_NONBLOCK);
-            if (fd < 0) {
-                perror("open");
-                continue;
-            }
-            char name[256]; // Surely it won't be longer than this
-            if (ioctl(fd, EVIOCGNAME(sizeof(name)), name) < 0) {
-                perror("ioctl");
-                close(fd);
-                continue;
-            }
-            if (strstr(name, "goodix-ts") != NULL) { // Name that shows up on my PW4. Not sure if it's the same for other devices.
-                printf("Found touchscreen: %s\n", filename);
-                screen_fd = fd;
-                break;
-            }
-            close(fd);
-        }
-    }
-    perror("not found");
-}
+struct libevdev *dev = NULL;
+int evfd = -1;
+
+bool init_failed = false;
 
 void I_InitInput(void) {
     printf("I_InitInput\n");
-    fds.events = POLLIN;
-    find_touchscreen();
-    if (screen_fd < 0) {
-        sprintf(stderr, "Failed to find touchscreen\n");
+    input_devices = fbink_input_scan(INPUT_TOUCHSCREEN, 0U, 0U, &dev_cnt);
+    printf("Found %d input devices\n", dev_cnt);
+    for (int i = 0; i < dev_cnt; i++) {
+        printf("Device %d: %s [fd%d]\n", i, input_devices[i].name, input_devices[i].fd);
     }
-    printf("screen_fd: %d\n", screen_fd);
-    fds.fd = screen_fd;
-    kill_processes_by_name("Xorg"); // Kill X. Why did I do this.
-    I_AtExit(I_ShutdownInput, true);
+    if (input_devices == NULL || dev_cnt < 1) {
+        printf("No input devices found\n");
+        return;
+    }
+
+    for (FBInkInputDevice* device = input_devices; device < input_devices + dev_cnt; device++) {
+        printf("Device: %s\n", device->name);
+        // YOLO, assume there's only one touchscreen
+        if (device->matched) {
+            evfd = device->fd;
+        }
+    }
+    if (evfd == -1) {
+        printf("No touchscreen found\n");
+        return;
+    }
+    free(input_devices);
+
+    printf("Using device [fd%d] for input\n", evfd);
+    dev    = libevdev_new();
+	int rc = libevdev_set_fd(dev, evfd);
+	if (rc < 0) {
+		sprintf(stderr, "Failed to initialize libevdev (%s)", strerror(-rc));
+        init_failed = true;
+        return;
+	} else {
+        printf("libevdev initialized\n");
+    }
+
+    if (libevdev_grab(dev, LIBEVDEV_GRAB) != 0) {
+		sprintf(stderr, "Cannot read input events because the input device is currently grabbed by something else!");
+        init_failed = true;
+		return;
+	} else {
+        printf("libevdev grabbed :blobfoxcheer:\n");
+    }
+
+    printf("Initialized libevdev for device %s\n", libevdev_get_name(dev));
+
+    pfd.fd            = evfd;
+	pfd.events        = POLLIN;
 }
 
 void I_GetEvent(void) {
-    // printf("I_GetEvent\n");
-    if (screen_fd < 0) {
-        sprintf(stderr, "No touchscreen\n");
+    if (init_failed) {
         return;
     }
-    // To be honest, I have no clue what happens here.
-    // I just copied it from StackOverflow.
-    int ret = poll(&fds, 1, 5);
-    if (ret > 0) {
-        if (fds.revents & POLLIN) {
+
+    int poll_num = poll(&pfd, 1, 0); // Doesn't matter if we time out, we can let the game run without inputs
+
+    if (poll_num == -1) {
+        if (errno == EINTR) {
+            return;
+        }
+        sprintf(stderr, "poll: %m");
+    } else if (poll_num > 0) {
+        if (pfd.revents & POLLIN) {
             struct input_event ev;
-            ret = read(screen_fd, &ev, sizeof(struct input_event));
-            if (ret < 0) {
-                perror("read");
-            } else {
-                printf("ev.type: %d\n", ev.type);
-                printf("ev.code: %d\n", ev.code);
-                printf("ev.value: %d\n", ev.value);
+            int rc = libevdev_next_event(dev, LIBEVDEV_READ_FLAG_NORMAL, &ev);
+            if (rc == 0) {
+                printf("Event: type %d code %d value %d\n", ev.type, ev.code, ev.value);
             }
         }
-    } else if (ret == 0) {
-        // printf("event timed out\n");
     } else {
-        perror("poll");
+        return;
     }
 }
 
 void I_ShutdownInput(void) {
     printf("I_ShutdownInput\n");
-    if (screen_fd >= 0) {
-        close(screen_fd);
+    if (dev != NULL) {
+        libevdev_grab(dev, LIBEVDEV_UNGRAB);
+        libevdev_free(dev);
     }
-    system("initctl start x");
+    if (evfd != -1) {
+        close(evfd);
+    }
 }
