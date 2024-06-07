@@ -1172,15 +1172,36 @@ void D_DoomMain (void)
         sleep(2); // give kual time to animate button press
         FBInkConfig fbink_cfg = {0};
         FBInkOTConfig fbink_ot_cfg = {0};
-        char *credits =
+
+        char *funnies[] = {
+            "Now with 87% more jank!",
+            "Now with 87% less jank!",
+            "Shoutouts to Lab126!",
+            "What would Carmack do?",
+            "Now with 400% more jank!",
+            "Somehow convinced my CS teacher to let me do this for finals",
+            "Go play DOOM Eternal instead",
+            "I heard someone ported Celeste Classic to this thing...",
+            "Should've just used X11",
+            "Why are we still here? Just to suffer?",
+        };
+
+        srand(time(NULL));
+        char *funny = funnies[rand() % arrlen(funnies)];
+
+        char *creditsOrig =
         "DOOM for the Amazon Kindle\n"
-        "Now with 87% more jank!\n"
+        "\"%s\"\n"
         "\n(c) 2024 BomberFish, Mercury Workshop\n"
         "\n\n"
         "Extra Credits:\n"
         "- Maxime Vincent: fbDOOM (upstream source)\n"
         "- NiLuJe: FBInk (e-ink drawing library)\n"
         "\n\nAlso thanks for not suing us, Id Software!";
+
+        char *credits = malloc(strlen(creditsOrig) + strlen(funny) + 1);
+        sprintf(credits, creditsOrig, funny);
+        printf("credits: %s\n", credits);
 
         // quick 'n dirty display init
         int fbink_fd = open("/dev/fb0", O_RDWR);

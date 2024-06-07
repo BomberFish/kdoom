@@ -1,4 +1,6 @@
 // bomberfish 2024
+// File: i_video_fbink.c
+// FBInk video for kdoom
 
 #include "config.h"
 #include "d_event.h"
@@ -113,10 +115,13 @@ int usegamma = 0;
 
 FBInkState fbink_state;
 
+bool norefresh = false;
+
 // Initialize the video system
 void I_InitGraphics(void) {
   usleep(500000); // sleep 0.5s
   printf("I_InitGraphics\n");
+
   // Open the framebuffer
   fbink_fd = open("/dev/fb0", O_RDWR);
   if (fbink_fd < 0) {
@@ -124,6 +129,16 @@ void I_InitGraphics(void) {
     exit(1);
   }
   printf("fbink_fd: %d\n", fbink_fd);
+
+  // Check cli args
+
+  if (M_CheckParm("-nodither")) {
+      fbink_cfg.dithering_mode = HWD_PASSTHROUGH;
+  }
+
+  if (M_CheckParm("-norefresh")) {
+      norefresh = true;
+  }
 
   // Initialize FBInk
   int ret = fbink_init(fbink_fd, &fbink_cfg);
@@ -133,11 +148,13 @@ void I_InitGraphics(void) {
   }
   printf("fbink_init: %d\n", ret);
 
+  // Get resolution
   fbink_get_state(&fbink_cfg, &fbink_state);
   uint32_t w = fbink_state.screen_width;
   uint32_t h = fbink_state.screen_height;
-  printf("Resolution: %d*%d", w, h);
+  printf("Resolution: %d*%d\n", w, h);
 
+  // Calculate scale factor
   scale_factor = w / SCREENWIDTH;
 
   screen_scaled = (FBInkRect){
@@ -162,6 +179,7 @@ void I_InitGraphics(void) {
   // Finish up
   screenvisible = true;
 
+  // Initialize input
   extern int I_InitInput(void);
   I_InitInput();
 }
@@ -182,7 +200,7 @@ void I_FinishUpdate(void) {
 #endif
   int ret;
 
-  if (frame == 0) {
+  if (frame == 0 && !norefresh) {
     // Clear the screen
     ret = fbink_cls(fbink_fd, &fbink_cfg, &screen_scaled, false);
     printf("fbink_cls: %d\n", ret);
@@ -207,6 +225,7 @@ void I_FinishUpdate(void) {
     }
   }
 
+  // Finally, print the buffer to the screen
   ret = fbink_print_raw_data(
       fbink_fd, (unsigned char *)I_VideoBuffer_FB, SCREENWIDTH * scale_factor,
       SCREENHEIGHT * scale_factor,
@@ -236,17 +255,16 @@ void I_ReadScreen(byte *scr) {
   memcpy(scr, I_VideoBuffer, SCREENWIDTH * SCREENHEIGHT);
 }
 
-// Functions that are useless to us, but the game expects them to exist
-__attribute__((weak)) void I_GetEvent(void) {
-#ifdef DEBUG
-  printf("(N/I) I_GetEvent\n");
-#endif
+// Input stuff
+// __attribute__((weak)) void I_GetEvent(void) {
+
+// }
+
+void I_StartTic(void) {
+    I_GetEvent();
 }
-__attribute__((weak)) void I_StartTic(void) {
-#ifdef DEBUG
-  printf("(N/I) I_StartTic\n");
-#endif
-}
+
+// Stuff the game expects but we don't care about
 void I_UpdateNoBlit(void) {
 #ifdef DEBUG
   printf("(N/I) I_UpdateNoBlit\n");

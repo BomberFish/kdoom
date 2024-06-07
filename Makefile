@@ -16,12 +16,13 @@ endif
 #CFLAGS+=-Wunused-const-variable=0
 #CFLAGS+=-fsanitize=address
 OBJS+=$(OBJDIR)/i_video_fbink.o
-OBJS+=$(OBJDIR)/i_input_tty.o
+OBJS+=$(OBJDIR)/i_input_raw.o
+OBJS+=$(OBJDIR)/kill.o
 
 CC=arm-kindlepw2-linux-gnueabi-gcc
-CFLAGS+=-ggdb3 -Os -I./FBInk
+CFLAGS+=-ggdb3 -O2 -I./FBInk -fPIC
 LDFLAGS+=-Wl,--gc-sections -L./FBInk/Release/static
-CFLAGS+=-ggdb3 -Wall -DNORMALUNIX -DLINUX -DSNDSERV # -DUSEASM
+CFLAGS+=-ggdb3 -Wall -DNORMALUNIX -DLINUX
 LIBS+=-lm -lc -lfbink
 
 # ifneq ($(NOSDL),1)
@@ -59,6 +60,11 @@ dev-ssh: package
 	sshpass -p $(shell cat .passwd) ssh root@192.168.15.244 "uname -a"
 	sshpass -p $(shell cat .passwd) ssh root@192.168.15.244 "rm -rf /mnt/us/extensions/doom"
 	sshpass -p $(shell cat .passwd) scp -r ./kual/doom root@192.168.15.244:/mnt/us/extensions/
+
+
+# copy-libs:
+# 	if [ ! -f .passwd ]; then echo "Please create a file named .passwd with the root password of your kindle"; exit 1; fi
+# 	if [ ! -d lib ]; then sshpass -p $(shell cat .passwd) scp root@192.168.15.244:/usr/lib .; else echo "libs already copied :)"; fi
 
 run-ssh: dev-ssh
 	if [ ! -f .passwd ]; then echo "Please create a file named .passwd with the root password of your kindle"; exit 1; fi

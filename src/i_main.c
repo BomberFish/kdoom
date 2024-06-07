@@ -40,8 +40,7 @@ void HandleSignal(int sig)
     if (sig == SIGINT)
     {
         printf("Caught SIGINT, shutting down...\r\n");
-        I_ShutdownGraphics();
-        exit(0);
+        I_Quit();
     }
 }
 
@@ -61,4 +60,5 @@ int main(int argc, char **argv)
     sigaction(SIGINT, &(struct sigaction){.sa_handler = HandleSignal}, NULL);
 
     return 0;
+
 }

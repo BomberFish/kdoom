@@ -3,3 +3,4 @@ build
 kdoom
 *.wad
 .passwd
+lib/*
