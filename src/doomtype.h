@@ -61,6 +61,7 @@
 // standard and defined to include stdint.h, so include this. 
 
 #include <inttypes.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 

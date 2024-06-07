@@ -12,15 +12,12 @@ else
 	VB=@
 endif
 
-#LIBS+=-lXext -lX11 -lnsl -lm -lSDL
-#CFLAGS+=-Wunused-const-variable=0
-#CFLAGS+=-fsanitize=address
 OBJS+=$(OBJDIR)/i_video_fbink.o
 OBJS+=$(OBJDIR)/i_input_evdev.o
 OBJS+=$(OBJDIR)/kill.o
 
 CC=arm-kindlepw2-linux-gnueabi-gcc
-CFLAGS+=-ggdb3 -O2 -I./FBInk -fPIC
+CFLAGS+=-ggdb3 -O2 -I./FBInk -fPIC -Wunused-const-variable=0 -Wall
 LDFLAGS+=-Wl,--gc-sections -L./FBInk/Release/static -L./FBInk/libevdev-staged/lib
 CFLAGS+=-ggdb3 -Wall -DNORMALUNIX -DLINUX
 LIBS+=-lm -lc -lfbink -l:libevdev.a
@@ -80,8 +77,6 @@ $(OUTPUT):	$(OBJS) fbink
 	@echo [Linking $@]
 	$(VB)$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) \
 	-o $(OUTPUT) $(LIBS) -Wl,-Map,$(OUTPUT).map
-	@echo [Size]
-	-$(CROSS_COMPILE)size $(OUTPUT)
 
 $(OBJS): | $(OBJDIR)
 
