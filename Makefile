@@ -16,7 +16,7 @@ endif
 #CFLAGS+=-Wunused-const-variable=0
 #CFLAGS+=-fsanitize=address
 OBJS+=$(OBJDIR)/i_video_fbink.o
-OBJS+=$(OBJDIR)/i_input_raw.o
+OBJS+=$(OBJDIR)/i_input_evdev.o
 OBJS+=$(OBJDIR)/kill.o
 
 CC=arm-kindlepw2-linux-gnueabi-gcc
