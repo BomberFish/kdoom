@@ -372,7 +372,7 @@ void I_Error (char *error, ...)
     }
     else
     {
-        already_quitting = true;
+        // already_quitting = true;
     }
 
     // Message first.
@@ -460,9 +460,10 @@ void I_Error (char *error, ...)
 
     exit(-1);
 #else
-    while (true)
-    {
-    }
+    // while (true)
+    // {
+    // }
+    printf("Game is in an unstable state. You are on your own.\n");
 #endif
 }
 

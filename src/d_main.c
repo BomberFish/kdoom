@@ -412,6 +412,7 @@ boolean D_GrabMouseCallback(void)
 //
 void D_DoomLoop (void)
 {
+    printf("D_DoomLoop\n");
     if (bfgedition &&
         (demorecording || (gameaction == ga_playdemo) || netgame))
     {
@@ -429,16 +430,24 @@ void D_DoomLoop (void)
     TryRunTics();
 
     I_SetWindowTitle(gamedescription);
+    printf("I_SetWindowTitle: %s\n", gamedescription);
     I_GraphicsCheckCommandLine();
+    printf("I_GraphicsCheckCommandLine\n");
     I_SetGrabMouseCallback(D_GrabMouseCallback);
+    printf("I_SetGrabMouseCallback\n");
     I_InitGraphics();
+    printf("I_InitGraphics\n");
 
     I_EnableLoadingDisk();
+    printf("I_EnableLoadingDisk\n");
 
     V_RestoreBuffer();
+    printf("V_RestoreBuffer\n");
     R_ExecuteSetViewSize();
+    printf("R_ExecuteSetViewSize\n");
 
     D_StartGameLoop();
+    printf("D_StartGameLoop\n");
 
     if (testcontrols)
     {

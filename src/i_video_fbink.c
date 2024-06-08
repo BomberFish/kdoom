@@ -117,6 +117,15 @@ FBInkState fbink_state;
 
 bool norefresh = false;
 
+void I_GetScreenSize(int *width, int *height) {
+  fbink_get_state(&fbink_cfg, &fbink_state);
+  uint32_t w = fbink_state.screen_width;
+  uint32_t h = fbink_state.screen_height;
+  printf("Resolution: %d*%d\n", w, h);
+  *width = (int)w;
+  *height = (int)h;
+}
+
 // Initialize the video system
 void I_InitGraphics(void) {
   usleep(500000); // sleep 0.5s

@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <sys/types.h>
 
 #include "doomtype.h"
 #include "i_system.h"
@@ -37,12 +38,11 @@ void D_DoomMain (void);
 
 void HandleSignal(int sig)
 {
-    if (sig == SIGINT)
-    {
-        printf("Caught SIGINT, shutting down...\r\n");
-        I_Quit();
-    }
+    printf("Caught signal %d, quitting...\r\n", sig);
+    I_Quit();
 }
+
+struct sigaction sa;
 
 int main(int argc, char **argv)
 {
@@ -57,7 +57,13 @@ int main(int argc, char **argv)
     printf("Starting D_DoomMain\r\n");
     D_DoomMain ();
 
-    sigaction(SIGINT, &(struct sigaction){.sa_handler = HandleSignal}, NULL);
+    sa.sa_handler = HandleSignal;
+
+    sigaction(SIGINT, &sa, NULL);
+    sigaction(SIGTERM, &sa, NULL);
+    sigaction(SIGQUIT, &sa, NULL);
+    sigaction(SIGHUP, &sa, NULL);
+    sigaction(SIGKILL, &sa, NULL);
 
     return 0;
 
