@@ -27,13 +27,30 @@ Setup is easy as pie (?)
 You will need:
 * Everything from the setup guide
 * A Linux PC. macOS might work on a good day but you're on your own.
-* A compatible toolchain. See [here](https://www.mobileread.com/forums/showthread.php?t=348710) (sources and prebuilts)
+* A compatible toolchain. See below.
 
 Just run the following:
 * `git clone https://github.com/MercuryWorkshop/kdoom --recurse-submodules`
 * `make package`
 
 After that, just follow the installation instructions in "Setup".
+
+## Getting a toolchain
+
+Amazon changed the architecture the OS uses in a recent software update. You will need a compatible toolchain to build the binaries.
+
+### ARM soft float (FW <= 5.16.2.1.1)
+
+* [Source](https://github.com/koreader/koxtoolchain)
+* [Pre-built](https://mega.co.nz/#!yK4mRAyB!CvvSNWmzX4SSDlgtZp2f82dhJvcfB1Zoznwh4FiT4YY)
+
+### ARM hard float (FW > 5.16.2.1.1)
+
+* [Source](https://github.com/notmarek/koxtoolchain)
+* [Pre-built](https://fw.notmarek.com/khf/hf-tc.tar.gz)
+
+> [!IMPORTANT]  
+> You will need to append `ARMHF=1` to all `make` commands.
 
 ## Credits
 

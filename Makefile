@@ -12,11 +12,16 @@ else
 	VB=@
 endif
 
+ifeq ($(ARMHF),1)
+	TC=arm-kindlehf-linux-gnueabihf
+else
+	TC=arm-kindlepw2-linux-gnueabi
+endif
+
 OBJS+=$(OBJDIR)/i_video_fbink.o
 OBJS+=$(OBJDIR)/i_input_evdev.o
 OBJS+=$(OBJDIR)/kill.o
-
-CC=arm-kindlepw2-linux-gnueabi-gcc
+CC=$(TC)-gcc
 CFLAGS+=-ggdb3 -O2 -I./FBInk -fPIC -Wunused-const-variable=0 -Wall
 LDFLAGS+=-Wl,--gc-sections -L./FBInk/Release/static -L./FBInk/libevdev-staged/lib
 CFLAGS+=-ggdb3 -Wall -DNORMALUNIX -DLINUX
@@ -44,12 +49,13 @@ clean: fbink_clean
 fbink_clean:
 	$(MAKE) -C FBInk clean
 	$(MAKE) -C FBInk libevdevclean
+	rm FBInk/libevdev.built
 
 fbink: fbink_libevdev
-	$(MAKE) -C FBInk static KINDLE=1 CROSS_COMPILE=arm-kindlepw2-linux-gnueabi-
+	$(MAKE) -C FBInk static KINDLE=1 CROSS_COMPILE=$(TC)-
 
 fbink_libevdev:
-	$(MAKE) -C FBInk libevdev.built KINDLE=1 CROSS_COMPILE=arm-kindlepw2-linux-gnueabi- CROSS_TC=arm-kindlepw2-linux-gnueabi CC=arm-kindlepw2-linux-gnueabi-gcc AR=arm-kindlepw2-linux-gnueabi-ar LD=arm-kindlepw2-linux-gnueabi-ld
+	$(MAKE) -C FBInk libevdev.built KINDLE=1 CROSS_COMPILE=$(TC)- CROSS_TC=$(TC) CC=$(TC)-gcc AR=$(TC)-ar LD=$(TC)-ld
 
 package: $(OUTPUT)
 	cp $(OUTPUT) ./kual/doom
