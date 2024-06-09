@@ -50,7 +50,7 @@ Amazon changed the architecture the OS uses in a recent software update. You wil
 * [Pre-built](https://fw.notmarek.com/khf/hf-tc.tar.gz)
 
 > [!IMPORTANT]  
-> You will need to append `ARMHF=1` to all `make` commands.
+> You will need to append `ARMHF=1` to all `make` commands when building for newer firmware versions.
 
 ## Credits
 
