@@ -37,7 +37,7 @@ After that, just follow the installation instructions in "Setup".
 
 ## Getting a toolchain
 
-Amazon changed the architecture the OS uses in a recent software update. You will need a compatible toolchain to build the binaries.
+Amazon changed the architecture the OS uses in a recent software update. You will need a compatible toolchain to build the binaries. Just unzip the desired tc and copy everything inside the x-tools folder to /usr (on Linux; macOS is different)
 
 ### ARM soft float (FW <= 5.16.2.1.1)
 
