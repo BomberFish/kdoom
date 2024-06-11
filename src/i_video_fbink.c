@@ -113,6 +113,8 @@ int mouse_threshold = 10;
 
 int usegamma = 0;
 
+void PlaceKeys(void);
+
 FBInkState fbink_state;
 
 bool norefresh = false;
@@ -213,6 +215,8 @@ void I_FinishUpdate(void) {
     // Clear the screen
     ret = fbink_cls(fbink_fd, &fbink_cfg, &screen_scaled, false);
     printf("fbink_cls: %d\n", ret);
+    // Redraw buttons
+    PlaceKeys();
   }
 
   // clearing the screen on each frame would technically look better,

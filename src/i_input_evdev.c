@@ -147,6 +147,7 @@ int BTN_PAD = 10;
 Button *keys[] = {&upKey, &downKey, &leftKey, &rightKey, &fireKey, &enterKey, NULL};
 
 __attribute__ ((weak)) int fbink_fd;
+__attribute__ ((weak)) FBInkConfig fbink_cfg;
 
 void CalcKeyPos(void) {
     printf("CalcKeyPos\n");
@@ -172,12 +173,13 @@ void PlaceKeys(void) {
         }
 
         printf("Placing key %d\n", i);
-        FBInkRect* rect = &keys[i]->rect;
-        fbink_invert_rect(fbink_fd, rect, NULL);
+        FBInkRect rect = keys[i]->rect;
+        fbink_fill_rect_rgba(fbink_fd, &fbink_cfg, &rect, NULL, 0x00, 0x00, 0x00, 0xFFu);
     }
 }
 
 void I_InitInput(void) {
+    // PlaceKeys();
     printf("I_InitInput\n");
     I_GetScreenSize(&scw, &sch);
     BTN_PAD = (scw / 6) / 10;
