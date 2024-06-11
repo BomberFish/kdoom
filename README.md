@@ -18,8 +18,8 @@ You will need:
 
 Setup is easy as pie (?)
 1. Connect your Kindle via USB.
-2. Copy your DOOM .wad to the root of the storage device.
-3. Copy the kual extension folder to the extensions/ folder.
+2. Copy your DOOM .wad to the root of the userstore.
+3. Copy the kual extension folder to the extensions/ folder inside the userstore.
 4. Enjoy! ;)
 
 ## Building from source
@@ -35,7 +35,10 @@ Just run the following:
 
 After that, just follow the installation instructions in "Setup".
 
-## Getting a toolchain
+## Getting a (compatible) toolchain
+
+> [!WARNING]  
+> General support for armhf-based firmware versions is very poor at the moment, since the change is very recent. **YOU ARE ON YOUR OWN.**
 
 Amazon changed the architecture the OS uses in a recent software update. You will need a compatible toolchain to build the binaries. Just unzip the desired tc and copy everything inside the x-tools folder to /usr (on Linux; macOS is different)
 
