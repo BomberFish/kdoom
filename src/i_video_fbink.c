@@ -214,7 +214,9 @@ void I_FinishUpdate(void) {
   if (frame == 0 && !norefresh) {
     // Clear the screen
     ret = fbink_cls(fbink_fd, &fbink_cfg, &screen_scaled, false);
+    #if DEBUG
     printf("fbink_cls: %d\n", ret);
+    #endif
     // Redraw buttons
     PlaceKeys();
   }

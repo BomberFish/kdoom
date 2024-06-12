@@ -9,6 +9,11 @@
           "exitmenu": false
         },
         {
+          "name": "Launch game (no dithering)",
+          "action": "./kdoom -nodither",
+          "exitmenu": false
+        },
+        {
           "name": "Kill all running instances",
           "action": "killall kdoom",
           "exitmenu": false
