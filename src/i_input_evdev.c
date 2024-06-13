@@ -1,7 +1,7 @@
 // bomberfish 2024
 // File: i_input_raw.c
 // Raw /dev/input touchscreen input for kdoom. Most code taken from FBInk's finger_trace sample.
-// TODO: Control labels, dont repeat keydowns
+// TODO: Don't repeat keydowns, position labels correctly
 
 #include <stdlib.h>
 #include <ctype.h>
@@ -18,6 +18,7 @@
 #include <dirent.h>
 #include <poll.h>
 #include <errno.h>
+#include <sys/param.h>
 #include <../FBInk/fbink.h>
 #include <../FBInk/libevdev/libevdev/libevdev.h>
 
@@ -67,6 +68,7 @@ typedef struct {
 
 typedef struct {
     int key;
+    char *label;
     FBInkRect rect;
 } Button;
 
@@ -83,6 +85,7 @@ void I_GetScreenSize(int *width, int *height);
 
 Button upKey = {
     .key = KEY_UPARROW,
+    .label = "UP",
     .rect = {
         .left = 0,
         .top = 0,
@@ -93,6 +96,7 @@ Button upKey = {
 
 Button downKey = {
     .key = KEY_DOWNARROW,
+    .label = "DOWN",
     .rect = {
         .left = 0,
         .top = 0,
@@ -103,6 +107,7 @@ Button downKey = {
 
 Button leftKey = {
     .key = KEY_LEFTARROW,
+    .label = "LEFT",
     .rect = {
         .left = 0,
         .top = 0,
@@ -113,6 +118,7 @@ Button leftKey = {
 
 Button rightKey = {
     .key = KEY_RIGHTARROW,
+    .label = "RIGHT",
     .rect = {
         .left = 0,
         .top = 0,
@@ -122,7 +128,8 @@ Button rightKey = {
 };
 
 Button fireKey = {
-    .key = KEY_SPACE,
+    .key = KEY_FIRE,
+    .label = "FIRE",
     .rect = {
         .left = 0,
         .top = 0,
@@ -133,6 +140,7 @@ Button fireKey = {
 
 Button enterKey = {
     .key = KEY_ENTER,
+    .label = "ENTER",
     .rect = {
         .left = 0,
         .top = 0,
@@ -167,15 +175,44 @@ void CalcKeyPos(void) {
 
 void PlaceKeys(void) {
     printf("PlaceKeys\n");
-    for (int i = 0; i < sizeof(keys); i++) {
+
+
+    FBInkOTConfig fbink_ot_cfg = {
+        .size_px = BTN_SIZE / 4,
+        .margins = {
+            .top = 0,
+            .bottom = 0,
+            .left = 0,
+            .right = 0,
+        }
+    };
+
+    fbink_add_ot_font_v2("/usr/java/lib/fonts/Futura-Medium.ttf", FNT_REGULAR, &fbink_ot_cfg); // Should be on most if not all Kindles
+    size_t len = sizeof(keys) / sizeof(keys[0]);
+    for (int i = 0; i < len; i++) {
         if (!keys[i]) {
             break; // It's joever
         }
-
         printf("Placing key %d\n", i);
-        FBInkRect rect = keys[i]->rect;
-        fbink_fill_rect_rgba(fbink_fd, &fbink_cfg, &rect, NULL, 0x00, 0x00, 0x00, 0xFFu);
+        fbink_ot_cfg.margins.top = keys[i]->rect.top + (BTN_SIZE / 2) - (fbink_ot_cfg.size_px / 2);
+        short int l = MAX(keys[i]->rect.left - ((strlen(keys[i]->label) * fbink_ot_cfg.size_px)), 0);
+        printf("l: %d\n", l);
+        fbink_ot_cfg.margins.left = l + (BTN_SIZE);
+        fbink_ot_cfg.margins.right = MIN(scw - BTN_SIZE * i - BTN_PAD * i - (BTN_SIZE / 2), scw - BTN_SIZE);
+        printf("%d %d %d\n", fbink_ot_cfg.margins.top, fbink_ot_cfg.margins.left, fbink_ot_cfg.margins.right);
+        // fbink_fill_rect_gray(fbink_fd, &fbink_cfg, &keys[i]->rect, 0U, 0x00);
+#if DEBUG
+        printf("fbink_invert_rect\n");
+#endif
+        fbink_invert_rect(fbink_fd, &keys[i]->rect, 0U);
+
+#if DEBUG
+        printf("fbink_print_ot: %s\n", keys[i]->label);
+#endif
+        fbink_print_ot(fbink_fd, keys[i]->label, &fbink_ot_cfg, &fbink_cfg, 0U);
     }
+
+    fbink_free_ot_fonts_v2(&fbink_ot_cfg); // TODO: Optimize this
 }
 
 void I_InitInput(void) {

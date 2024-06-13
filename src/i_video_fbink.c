@@ -177,7 +177,7 @@ void I_InitGraphics(void) {
 
   for (int i = 0; i < 3; i++) { // Prevent menu ghosting
     // Clear the screen
-    ret = fbink_cls(fbink_fd, &fbink_cfg, &screen_scaled, false);
+    ret = fbink_cls(fbink_fd, &fbink_cfg, NULL, NULL);
     printf("fbink_cls: %d\n", ret);
   }
 
