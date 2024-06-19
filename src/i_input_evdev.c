@@ -275,8 +275,7 @@ void I_GetEvent(void) {
     } else if (poll_num > 0) {
         if (pfd.revents & POLLIN) {
             struct input_event ev;
-            int rc = libevdev_next_event(dev, LIBEVDEV_READ_FLAG_NORMAL, &ev);
-            if (rc == 0) {
+            while (libevdev_next_event(dev, LIBEVDEV_READ_FLAG_NORMAL, &ev) == 0) {
                 printf("Event: type %d code %d value %d\n", ev.type, ev.code, ev.value);
                 if (ev.type == EV_ABS) {
                     switch (ev.code) {
