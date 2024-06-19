@@ -4,3 +4,4 @@ kdoom
 *.wad
 .passwd
 lib/*
+package/kdoom*

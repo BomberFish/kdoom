@@ -14,8 +14,10 @@ endif
 
 ifeq ($(ARMHF),1)
 	TC=arm-kindlehf-linux-gnueabihf
+	TARGET=kindlehf
 else
 	TC=arm-kindlepw2-linux-gnueabi
+	TARGET=kindlepw2
 endif
 
 OBJS+=$(OBJDIR)/i_video_fbink.o
@@ -70,6 +72,13 @@ dev-ssh: package
 	sshpass -p $(shell cat .passwd) ssh root@192.168.15.244 "rm -rf /mnt/us/extensions/doom"
 	sshpass -p $(shell cat .passwd) scp -r ./kual/doom root@192.168.15.244:/mnt/us/extensions/
 
+package-release: package
+	zip -r package/kdoom-$(TARGET)-0.1.zip kual/doom
+
+everything: clean
+	$(MAKE) package-release ARMHF=1
+	$(MAKE) clean
+	$(MAKE) package-release ARMHF=0
 
 # copy-libs:
 # 	if [ ! -f .passwd ]; then echo "Please create a file named .passwd with the root password of your kindle"; exit 1; fi
@@ -83,6 +92,7 @@ $(OUTPUT):	$(OBJS) fbink
 	@echo [Linking $@]
 	$(VB)$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) \
 	-o $(OUTPUT) $(LIBS) -Wl,-Map,$(OUTPUT).map
+	file $(OUTPUT)
 
 $(OBJS): | $(OBJDIR)
 
