@@ -3,24 +3,20 @@
 // FBInk video for kdoom
 
 #include "config.h"
-#include "d_event.h"
-#include "d_main.h"
 #include "i_video.h"
 #include "m_argv.h"
-#include "v_video.h"
 #include "z_zone.h"
-
-#include "doomkeys.h"
-#include "tables.h"
 
 #include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <memory.h>
+
+#include "i_timer.h"
 
 #include "../FBInk/fbink.h"
-#include <stdarg.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -271,9 +267,9 @@ void I_ReadScreen(byte *scr) {
 }
 
 // Input stuff
-// __attribute__((weak)) void I_GetEvent(void) {
+__attribute__((weak)) void I_GetEvent(void) {
 
-// }
+}
 
 void I_StartTic(void) {
     I_GetEvent();

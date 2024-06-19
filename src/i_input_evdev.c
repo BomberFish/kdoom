@@ -4,8 +4,6 @@
 // TODO: Don't repeat keydowns, position labels correctly
 
 #include <stdlib.h>
-#include <ctype.h>
-#include <math.h>
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -23,22 +21,9 @@
 #include <../FBInk/libevdev/libevdev/libevdev.h>
 
 #include "config.h"
-#include "deh_str.h"
-#include "doomtype.h"
 #include "doomkeys.h"
-#include "i_joystick.h"
 #include "i_system.h"
-#include "i_swap.h"
-#include "i_timer.h"
 #include "i_video.h"
-#include "i_scale.h"
-#include "m_argv.h"
-#include "m_config.h"
-#include "m_misc.h"
-#include "tables.h"
-#include "v_video.h"
-#include "w_wad.h"
-#include "z_zone.h"
 
 int vanilla_keyboard_mapping = 1;
 
@@ -316,10 +301,6 @@ void I_GetEvent(void) {
                             break; // It's joever
                         }
 
-                        // if (prev_ev.down == true && touch_ev.down == true) {
-                        //     continue;
-                        // }
-
                         Coord touch = touch_ev.pos;
 
                         if (touch.x >= keys[i]->rect.left && touch.x <= keys[i]->rect.left + keys[i]->rect.width &&
@@ -333,7 +314,7 @@ void I_GetEvent(void) {
                     }
 
                     prev_ev = touch_ev;
-                                
+
                 }
             }
         }

@@ -5,12 +5,12 @@
       "items": [
         {
           "name": "Launch game",
-          "action": "./kdoom",
+          "action": "./wrapper.sh",
           "exitmenu": false
         },
         {
           "name": "Launch game (no dithering)",
-          "action": "./kdoom -nodither",
+          "action": "./wrapper.sh -nodither",
           "exitmenu": false
         },
         {
@@ -20,7 +20,7 @@
         },
         {
           "name": "Credits",
-          "action": "./kdoom -showcredits",
+          "action": "./wrapper.sh -showcredits",
           "exitmenu": false
         }
       ]

@@ -1193,6 +1193,7 @@ void D_DoomMain (void)
             "I heard someone ported Celeste Classic to this thing...",
             "Should've just used X11",
             "Why are we still here? Just to suffer?",
+            "I'm sorry, Dave, I'm afraid I can't do that."
         };
 
         srand(time(NULL));
