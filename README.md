@@ -2,12 +2,14 @@
 
 WIP port of DOOM to the Kindle (seriously, why hasn't anyone done this yet?)
 
+Tested on: Kindle Paperwhite 4, Kindle Basic 10
+
 ## Todo
 
 * ~~Scale properly to the screen~~
 * ~~Figure out the optimal e-ink waveform for displaying the game~~
-* Proper touch input
-* Test on something other than my (BomberFish's) Paperwhite 4
+* ~~Proper touch input~~
+* ~~Test on something other than my (BomberFish's) Paperwhite 4~~
 * ~~Kobo?~~ (probably never happening)
 
 ## Setup
